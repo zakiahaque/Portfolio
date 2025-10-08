@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Email Compose Launcher (Gmail + mailto)</title>
+  <style>
+    :root {
+      --bg: #0f172a;      /* slate-900 */
+      --panel: #111827;   /* gray-900 */
+      --ink: #e5e7eb;     /* gray-200 */
+      --muted: #9ca3af;   /* gray-400 */
+      --brand: #16a34a;   /* green-600 */
+      --brand-2: #2563eb; /* blue-600 */
+      --brand-3: #9333ea; /* violet-600 */
+      --ring: #22d3ee;    /* cyan-400 */
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Noto Sans", "Helvetica Neue", Arial, "Apple Color Emoji", "Segoe UI Emoji";
+      background: radial-gradient(1200px 800px at 10% 10%, #0b1025, var(--bg));
+      color: var(--ink); display: grid; place-items: center;
+    }
+    .card {
+      width: min(720px, 92vw);
+      background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 18px; padding: 28px; box-shadow: 0 10px 40px rgba(0,0,0,.35);
+      backdrop-filter: blur(8px);
+    }
+    h1 { margin: 0 0 6px; font-size: clamp(20px, 2.6vw, 30px); }
+    p  { margin: 0; color: var(--muted); line-height: 1.5; }
+    .row { display: flex; gap: 12px; flex-wrap: wrap; margin-top: 18px; }
+    .btn {
+      appearance: none; border: 0; border-radius: 12px; padding: 12px 16px; cursor: pointer;
+      color: white; font-weight: 600; letter-spacing: .2px; transition: transform .04s ease, box-shadow .2s ease, opacity .2s ease;
+      box-shadow: 0 6px 16px rgba(0,0,0,.35);
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .g { background: var(--brand-2); }
+    .o { background: var(--brand-3); }
+    .m { background: var(--brand); }
+    .tiny { font-size: 12px; color: var(--muted); margin-top: 14px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 16px; }
+    label { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: block; }
+    input, textarea {
+      width: 100%; background: #0b1227; color: var(--ink); border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px; padding: 10px 12px; outline: none;
+    }
+    textarea { min-height: 96px; resize: vertical; }
+    .ring:focus { box-shadow: 0 0 0 2px var(--ring); border-color: var(--ring); }
+    .footer { display:flex; justify-content: space-between; align-items:center; gap:12px; margin-top: 18px; flex-wrap:wrap; }
+    .links { display:flex; gap:10px; flex-wrap:wrap; }
+    a.link { color:#7dd3fc; text-decoration: none; border-bottom:1px dashed #7dd3fc40; }
+    a.link:hover { border-bottom-color:#7dd3fc; }
+    .code { background:#0b1227; border:1px solid rgba(255,255,255,0.08); border-radius:10px; padding:10px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; font-size:12px; }
+  </style>
+</head>
+<body>
+  <main class="card" role="main">
+    <h1>Open email compose (Gmail or default mail app)</h1>
+    <p>Click a button below. This works on GitHub Pages with only HTML, CSS, and JavaScript. You cannot set the sender automatically; the sender will be the user's logged-in account.</p>
+
+    <!-- Quick inputs so you can change details without editing code -->
+    <div class="grid" aria-label="Compose details">
+      <div>
+        <label for="to">To</label>
+        <input id="to" class="ring" type="email" placeholder="you@example.com" value="you@example.com" />
+      </div>
+      <div>
+        <label for="cc">CC (optional)</label>
+        <input id="cc" class="ring" type="text" placeholder="cc1@example.com, cc2@example.com" />
+      </div>
+      <div>
+        <label for="subject">Subject</label>
+        <input id="subject" class="ring" type="text" placeholder="Hello from your site" value="Hello from your site" />
+      </div>
+      <div>
+        <label for="bcc">BCC (optional)</label>
+        <input id="bcc" class="ring" type="text" placeholder="bcc@example.com" />
+      </div>
+    </div>
+    <div style="margin-top:12px">
+      <label for="body">Message</label>
+      <textarea id="body" class="ring" placeholder="Type your message...">Hi there!</textarea>
+    </div>
+
+    <div class="row" style="margin-top:18px">
+      <button id="gmailCompose" class="btn g" type="button">Compose in Gmail</button>
+      <button id="mailtoCompose" class="btn m" type="button">Use default mail app</button>
+      <button id="outlookCompose" class="btn o" type="button">Compose in Outlook Web</button>
+      <a id="gmailInbox" class="btn" style="background:#334155" href="https://mail.google.com/mail/u/0/?tab=rm&ogbl#inbox" target="_blank" rel="noopener">Open Gmail Inbox</a>
+    </div>
+
+    <p class="tiny">Tip: If a user doesn't have a default mail app set up, the Gmail/Outlook buttons are good fallbacks. You still cannot auto-send or force a specific sender for privacy/security reasons.</p>
+
+    <div class="footer">
+      <div class="code" id="previewLink" aria-live="polite" aria-atomic="true"></div>
+      <div class="links">
+        <a class="link" href="#" id="copyLink">Copy current compose link</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // Utilities
+    const byId = (id) => document.getElementById(id);
+    const toField   = byId('to');
+    const ccField   = byId('cc');
+    const bccField  = byId('bcc');
+    const subField  = byId('subject');
+    const bodyField = byId('body');
+    const preview   = byId('previewLink');
+
+    // Builders
+    function buildGmailUrl() {
+      const p = new URLSearchParams();
+      const to = toField.value.trim();
+      if (to) p.set('to', to);
+      const su = subField.value.trim();
+      if (su) p.set('su', su);
+      const body = bodyField.value;
+      if (body) p.set('body', body);
+      const cc = ccField.value.trim();
+      if (cc) p.set('cc', cc);
+      const bcc = bccField.value.trim();
+      if (bcc) p.set('bcc', bcc);
+      // fs=1 opens a popup compose, view=cm is compose mode
+      return `https://mail.google.com/mail/?view=cm&fs=1&${p.toString()}`;
+    }
+    function buildMailtoUrl() {
+      const to = toField.value.trim() || '';
+      const qp = new URLSearchParams();
+      const su = subField.value.trim();
+      if (su) qp.set('subject', su);
+      const body = bodyField.value;
+      if (body) qp.set('body', body);
+      const cc = ccField.value.trim();
+      if (cc) qp.set('cc', cc);
+      const bcc = bccField.value.trim();
+      if (bcc) qp.set('bcc', bcc);
+      return `mailto:${encodeURIComponent(to)}?${qp.toString()}`;
+    }
+    function buildOutlookUrl() {
+      const p = new URLSearchParams();
+      const to = toField.value.trim();
+      if (to) p.set('to', to);
+      const su = subField.value.trim();
+      if (su) p.set('subject', su);
+      const body = bodyField.value;
+      if (body) p.set('body', body);
+      const cc = ccField.value.trim();
+      if (cc) p.set('cc', cc);
+      const bcc = bccField.value.trim();
+      if (bcc) p.set('bcc', bcc);
+      return `https://outlook.office.com/mail/deeplink/compose?${p.toString()}`;
+    }
+
+    // Actions
+    byId('gmailCompose').addEventListener('click', () => {
+      window.open(buildGmailUrl(), '_blank', 'noopener');
+    });
+    byId('mailtoCompose').addEventListener('click', () => {
+      window.location.href = buildMailtoUrl();
+    });
+    byId('outlookCompose').addEventListener('click', () => {
+      window.open(buildOutlookUrl(), '_blank', 'noopener');
+    });
+
+    // Live preview and copy support
+    function updatePreview() {
+      const url = buildGmailUrl();
+      preview.textContent = url;
+    }
+    [toField, ccField, bccField, subField, bodyField].forEach(el => el.addEventListener('input', updatePreview));
+    updatePreview();
+
+    byId('copyLink').addEventListener('click', (e) => {
+      e.preventDefault();
+      const url = buildGmailUrl();
+      navigator.clipboard.writeText(url).then(() => {
+        const old = e.target.textContent; e.target.textContent = 'Copied!';
+        setTimeout(() => e.target.textContent = old, 1200);
+      });
+    });
+  </script>
+</body>
+</html>
