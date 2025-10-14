@@ -387,12 +387,14 @@ function updateAnimations() {
   ticking = false;
 }
 
+
 window.addEventListener("scroll", () => {
   if (!ticking) {
     requestAnimationFrame(updateAnimations);
     ticking = true;
   }
 });
+
 
 // Error Handling
 window.addEventListener("error", function (e) {
